@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ИИ Астролог — Натальная карта</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Подключаем библиотеку для отрисовки натальных карт -->
+  <script src="https://unpkg.com/@astrodraw/astrochart@3.0.2/dist/astrochart.js"></script>
+  <style>
+    :root {
+      --bg-deep: #0b0914;
+      --bg-card: rgba(25, 21, 44, 0.78);
+      --accent: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.45);
+      --gold: #f5c542;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #241744 0%, var(--bg-deep) 70%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      max-width: 440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px 30px;
+    }
+
+    /* Прогресс-бар */
+    .progress-wrap {
+      display: none;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .progress-wrap.visible {
+      display: flex;
+    }
+    .progress-step {
+      flex: 1;
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      transition: background 0.3s ease;
+    }
+    .progress-step.active {
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+    }
+
+    /* Экраны */
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.35s ease;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Анимация заставки */
+    .wheel-wrap {
+      width: 150px;
+      height: 150px;
+      margin: 10px auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .wheel-circle {
+      width: 100%;
+      height: 100%;
+      border: 1.5px dashed rgba(245, 197, 66, 0.45);
+      border-radius: 50%;
+      animation: spin 28s linear infinite;
+      position: absolute;
+    }
+    .wheel-inner {
+      width: 108px;
+      height: 108px;
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 46px;
+      box-shadow: 0 0 35px var(--accent-glow);
+      background: rgba(18, 14, 34, 0.8);
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Карточки */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      backdrop-filter: blur(12px);
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14.5px;
+      line-height: 1.4;
+    }
+    .feature-icon {
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    /* Поля ввода */
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"] {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(11, 9, 20, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Чипсы выбора */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip {
+      flex: 1;
+      min-width: calc(50% - 8px);
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip.selected {
+      background: rgba(168, 85, 247, 0.22);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .zodiac-badge {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(245, 197, 66, 0.1);
+      border: 1px solid rgba(245, 197, 66, 0.3);
+      color: var(--gold);
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .checkbox-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    /* Экрана результатов с натальной картой */
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(11, 9, 20, 0.5);
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    #paper {
+      width: 100%;
+      max-width: 320px;
+      height: 320px;
+      margin: 0 auto;
+    }
+    .ai-interpretation {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      background: rgba(168, 85, 247, 0.08);
+      border-left: 3px solid var(--accent);
+      padding: 12px;
+      border-radius: 0 10px 10px 0;
+      margin-top: 10px;
+    }
+
+    /* Кнопки */
+    .nav-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .btn {
+      flex: 1;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
+      color: #fff;
+      box-shadow: 0 6px 20px var(--accent-glow);
+    }
+    .btn-secondary {
+      flex: 0.45;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+    .error-msg {
+      color: #f87171;
+      font-size: 13px;
+      text-align: center;
+      min-height: 18px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div>
+      <!-- Прогресс-бар -->
+      <div class="progress-wrap" id="progressBar">
+        <div class="progress-step" id="p1"></div>
+        <div class="progress-step" id="p2"></div>
+        <div class="progress-step" id="p3"></div>
+        <div class="progress-step" id="p4"></div>
+      </div>
+
+      <!-- Экран 0: Приветствие -->
+      <div class="screen active" id="screen-0">
+        <div class="wheel-wrap">
+          <div class="wheel-circle"></div>
+          <div class="wheel-inner">✨</div>
+        </div>
+        <h1>Получи бесплатный разбор твоей натальной карты</h1>
+        <p class="subtitle">Ответь на 4 простых вопроса для построения личного астрологического паспорта</p>
+        <div class="card feature-list">
+          <div class="feature-item">
+            <span class="feature-icon">🪐</span>
+            <span>ИИ мгновенно построит твое персональное натальное колесо.</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🔮</span>
+            <span>Даст глубокую расшифровку твоего потенциала и характера.</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🎁</span>
+            <span>В конце тебя ждет приятный подарок.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 1: Имя и пол -->
+      <div class="screen" id="screen-1">
+        <h1>Как к тебе обращаться?</h1>
+        <p class="subtitle">Нужно для персонализации астрологического прогноза</p>
+        <div class="card">
+          <label for="userName">Твоё имя</label>
+          <input type="text" id="userName" placeholder="Например, Ева" />
+
+          <label style="margin-top: 18px;">Пол</label>
+          <div class="chips">
+            <div class="chip selected" onclick="selectGender('Женский', this)">♀ Женский</div>
+            <div class="chip" onclick="selectGender('Мужской', this)">♂ Мужской</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 2: Дата рождения -->
+      <div class="screen" id="screen-2">
+        <h1>Дата рождения</h1>
+        <p class="subtitle">Определяет положение Солнца и ключевых планет</p>
+        <div class="card">
+          <label for="birthDate">Выбери дату</label>
+          <input type="date" id="birthDate" onchange="updateZodiac()" />
+          <div class="zodiac-badge" id="zodiacBadge"></div>
+        </div>
+      </div>
+
+      <!-- Экран 3: Время рождения -->
+      <div class="screen" id="screen-3">
+        <h1>Время рождения</h1>
+        <p class="subtitle">Необходимо для расчета домов и Асцендента</p>
+        <div class="card">
+          <div id="exactTimeBlock">
+            <label for="birthTime">Точное время</label>
+            <input type="time" id="birthTime" value="12:00" />
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="unknownTimeCheck" onchange="toggleUnknownTime()" />
+            <span>Я не знаю точного времени</span>
+          </label>
+
+          <div id="approxTimeBlock" style="display: none; margin-top: 14px;">
+            <label>Примерное время суток:</label>
+            <div class="chips">
+              <div class="chip selected" onclick="selectApprox('Утро', this)">🌅 Утро</div>
+              <div class="chip" onclick="selectApprox('День', this)">☀️ День</div>
+              <div class="chip" onclick="selectApprox('Вечер', this)">🌆 Вечер</div>
+              <div class="chip" onclick="selectApprox('Ночь', this)">🌙 Ночь</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 4: Город -->
+      <div class="screen" id="screen-4">
+        <h1>Место рождения</h1>
+        <p class="subtitle">Географическая точка для точной сетки домов</p>
+        <div class="card">
+          <label for="birthCity">Город</label>
+          <input type="text" id="birthCity" placeholder="Например, Москва" />
+
+          <label style="margin-top: 14px;">Быстрый выбор:</label>
+          <div class="chips">
+            <div class="chip" onclick="setCity('Москва')">Москва</div>
+            <div class="chip" onclick="setCity('Санкт-Петербург')">Санкт-Петербург</div>
+            <div class="chip" onclick="setCity('Екатеринбург')">Екатеринбург</div>
+            <div class="chip" onclick="setCity('Казань')">Казань</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 5: Готовая карта и разбор -->
+      <div class="screen" id="screen-5">
+        <h1>Твоя натальная карта ✨</h1>
+        <p class="subtitle" id="resultSubtitle">Расчёт завершен успешно</p>
+        <div class="card">
+          <div class="chart-container">
+            <div id="paper"></div>
+          </div>
+          <div class="ai-interpretation" id="aiText">
+            ИИ анализирует аспекты планет...
+          </div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <!-- Кнопки управления -->
+    <div class="nav-btns">
+      <button class="btn btn-secondary" id="backBtn" style="display: none;" onclick="prevStep()">Назад</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Начать расчёт ✨</button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    let currentStep = 0;
+    const state = {
+      name: "Гость",
+      gender: "Женский",
+      birthDate: "2000-01-01",
+      zodiacSign: "Козерог",
+      birthTime: "12:00",
+      unknownTime: false,
+      approxPeriod: "День",
+      city: "Москва"
+    };
+
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.first_name) {
+      document.getElementById("userName").value = tg.initDataUnsafe.user.first_name;
+    }
+
+    function selectGender(gender, el) {
+      state.gender = gender;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function toggleUnknownTime() {
+      const checked = document.getElementById("unknownTimeCheck").checked;
+      state.unknownTime = checked;
+      document.getElementById("exactTimeBlock").style.display = checked ? "none" : "block";
+      document.getElementById("approxTimeBlock").style.display = checked ? "block" : "none";
+    }
+
+    function selectApprox(period, el) {
+      state.approxPeriod = period;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function setCity(city) {
+      document.getElementById("birthCity").value = city;
+      document.getElementById("errorMsg").textContent = "";
+    }
+
+    function getZodiac(day, month) {
+      const signs = [
+        { name: "♑ Козерог", m: 1, d: 19 }, { name: "♒ Водолей", m: 2, d: 18 },
+        { name: "♓ Рыбы", m: 3, d: 20 }, { name: "♈ Овен", m: 4, d: 19 },
+        { name: "♉ Телец", m: 5, d: 20 }, { name: "♊ Близнецы", m: 6, d: 20 },
+        { name: "♋ Рак", m: 7, d: 22 }, { name: "♌ Лев", m: 8, d: 22 },
+        { name: "♍ Дева", m: 9, d: 22 }, { name: "♎ Весы", m: 10, d: 22 },
+        { name: "♏ Скорпион", m: 11, d: 21 }, { name: "♐ Стрелец", m: 12, d: 21 },
+        { name: "♑ Козерог", m: 12, d: 31 }
+      ];
+      for (const s of signs) {
+        if (month === s.m && day <= s.d) return s.name;
+        if (month < s.m) return s.name;
+      }
+      return "♑ Козерог";
+    }
+
+    function updateZodiac() {
+      const val = document.getElementById("birthDate").value;
+      const badge = document.getElementById("zodiacBadge");
+      if (!val) { badge.style.display = "none"; return; }
+      const [y, m, d] = val.split("-").map(Number);
+      state.zodiacSign = getZodiac(d, m);
+      badge.textContent = `Солнечный знак: ${state.zodiacSign}`;
+      badge.style.display = "block";
+    }
+
+    function validateStep() {
+      const err = document.getElementById("errorMsg");
+      err.textContent = "";
+
+      if (currentStep === 1) {
+        state.name = document.getElementById("userName").value.trim() || "Друг";
+      } else if (currentStep === 2) {
+        const dateVal = document.getElementById("birthDate").value;
+        if (!dateVal) { err.textContent = "Укажи дату рождения"; return false; }
+        state.birthDate = dateVal;
+      } else if (currentStep === 3) {
+        state.birthTime = state.unknownTime ? state.approxPeriod : (document.getElementById("birthTime").value || "12:00");
+      } else if (currentStep === 4) {
+        const city = document.getElementById("birthCity").value.trim();
+        if (!city) { err.textContent = "Укажи город рождения"; return false; }
+        state.city = city;
+      }
+      return true;
+    }
+
+    function renderStep() {
+      // Всего 5 экранов формы (0 до 4) и 1 экран результатов (5)
+      document.querySelectorAll(".screen").forEach((s, idx) => {
+        s.classList.toggle("active", idx === currentStep);
+      });
+
+      const progressBar = document.getElementById("progressBar");
+      progressBar.classList.toggle("visible", currentStep > 0 && currentStep < 5);
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`p${i}`).classList.toggle("active", i <= currentStep);
+      }
+
+      document.getElementById("backBtn").style.display = (currentStep > 0 && currentStep < 5) ? "block" : "none";
+      const nextBtn = document.getElementById("nextBtn");
+
+      if (currentStep === 0) nextBtn.textContent = "Начать расчёт ✨";
+      else if (currentStep === 4) nextBtn.textContent = "Построить карту 🔮";
+      else if (currentStep === 5) nextBtn.textContent = "Завершить и получить подарок 🎁";
+      else nextBtn.textContent = "Далее →";
+    }
+
+    function generateNatalChart() {
+      document.getElementById("resultSubtitle").textContent = `${state.name}, г. ${state.city}`;
+      
+      // Генерация примерных позиций планет на основе даты для демо-визуализации через AstroChart
+      const seed = state.birthDate.split("-").reduce((acc, val) => acc + parseInt(val), 0);
+      const getDeg = (offset) => (seed * 13 + offset * 30) % 360;
+
+      const data = {
+        planets: {
+          "Sun": [getDeg(1)], "Moon": [getDeg(2)], "Mercury": [getDeg(3)],
+          "Venus": [getDeg(4)], "Mars": [getDeg(5)], "Jupiter": [getDeg(6)],
+          "Saturn": [getDeg(7)], "Uranus": [getDeg(8)], "Neptune": [getDeg(9)], "Pluto": [getDeg(10)]
+        },
+        cusps: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]
+      };
+
+      // Рендерим интерактивное колесо через библиотеку astrochart
+      document.getElementById("paper").innerHTML = "";
+      try {
+        const chart = new astrochart.Chart('paper', 300, 300);
+        chart.radix(data).aspects();
+      } catch (e) {
+        console.error(e);
+      }
+
+      // Текст ИИ-разбора
+      document.getElementById("aiText").innerHTML = `
+        <b>Астрологический портрет:</b> Солнце в знаке ${state.zodiacSign}. <br><br>
+        Твоя натальная карта указывает на сильный творческий потенциал и интуицию. Личные планеты формируют гармоничные аспекты, отвечающие за харизму и способность находить нестандартные решения в сложных ситуациях.
+      `;
+    }
+
+    function nextStep() {
+      if (!validateStep()) return;
+
+      if (currentStep < 4) {
+        currentStep++;
+        renderStep();
+      } else if (currentStep === 4) {
+        currentStep = 5;
+        renderStep();
+        generateNatalChart();
+      } else {
+        if (tg && tg.showAlert) {
+          tg.showAlert("🎁 Твой подарок активирован! ИИ-астролог отправил бонус в чат бота.", () => {
+            tg.close();
+          });
+        } else {
+          alert("Спасибо за использование демо ИИ Астролога!");
+        }
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0 && currentStep < 5) {
+        document.getElementById("errorMsg").textContent = "";
+        currentStep--;
+        renderStep();
+      }
+    }
+  </script>
+</body>
+</html>
