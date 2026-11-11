@@ -1,0 +1,16 @@
+# Секреты и конфигурация с токеном бота
+config.py
+
+# База данных
+astro.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Служебные папки
+.opencode/
+
+# Операционная система
+Thumbs.db
+.DS_Store

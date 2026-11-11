@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ИИ Астролог — Натальная карта</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/@astrodraw/astrochart@3.0.2/dist/astrochart.js"></script>
+  <script src="https://unpkg.com/tz-lookup@6.1.25/tz.js"></script>
+  <style>
+    :root {
+      --bg-deep: #0b0914;
+      --bg-card: rgba(25, 21, 44, 0.78);
+      --accent: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.45);
+      --gold: #f5c542;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #241744 0%, var(--bg-deep) 70%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      max-width: 440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 18px 26px;
+    }
+
+    .progress-wrap {
+      display: none;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .progress-wrap.visible {
+      display: flex;
+    }
+    .progress-step {
+      flex: 1;
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      transition: background 0.3s ease;
+    }
+    .progress-step.active {
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeIn 0.3s ease;
+    }
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .wheel-wrap {
+      width: 140px;
+      height: 140px;
+      margin: 8px auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .wheel-circle {
+      width: 100%;
+      height: 100%;
+      border: 1.5px dashed rgba(245, 197, 66, 0.45);
+      border-radius: 50%;
+      animation: spin 28s linear infinite;
+      position: absolute;
+    }
+    .wheel-inner {
+      width: 100px;
+      height: 100px;
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      box-shadow: 0 0 35px var(--accent-glow);
+      background: rgba(18, 14, 34, 0.8);
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="time"] {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(11, 9, 20, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip {
+      flex: 1;
+      min-width: calc(50% - 8px);
+      padding: 12px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 14px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .chip.selected {
+      background: rgba(168, 85, 247, 0.22);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .zodiac-badge {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(245, 197, 66, 0.1);
+      border: 1px solid rgba(245, 197, 66, 0.3);
+      color: var(--gold);
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .checkbox-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.94);
+      border-radius: 14px;
+      padding: 8px;
+      margin-bottom: 12px;
+    }
+    #paper {
+      width: 290px;
+      height: 290px;
+      margin: 0 auto;
+    }
+    .ai-interpretation {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--text-main);
+      background: rgba(168, 85, 247, 0.1);
+      border-left: 3px solid var(--accent);
+      padding: 12px;
+      border-radius: 0 10px 10px 0;
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      flex: 1;
+      padding: 15px 18px;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
+      color: #fff;
+      box-shadow: 0 6px 20px var(--accent-glow);
+    }
+    .btn-secondary {
+      flex: 0.45;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+    .error-msg {
+      color: #f87171;
+      font-size: 13px;
+      text-align: center;
+      min-height: 18px;
+      margin-top: 6px;
+    }
+
+    textarea#questionInput {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(11, 9, 20, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 16px;
+      font-family: inherit;
+      outline: none;
+      resize: vertical;
+      min-height: 96px;
+    }
+    textarea#questionInput:focus {
+      border-color: var(--accent);
+    }
+    .char-counter {
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      text-align: right;
+      min-height: 16px;
+    }
+    .char-counter.limit {
+      color: var(--gold);
+    }
+
+    /* Выпадающий список городов (автоподсказки Nominatim) */
+    .city-wrap {
+      position: relative;
+    }
+    .city-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 30;
+      max-height: 240px;
+      overflow-y: auto;
+      background: #17122b;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      display: none;
+    }
+    .city-dropdown.visible {
+      display: block;
+    }
+    .city-option {
+      padding: 11px 14px;
+      font-size: 14px;
+      line-height: 1.35;
+      color: var(--text-main);
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .city-option:last-child {
+      border-bottom: none;
+    }
+    .city-option:hover,
+    .city-option:focus,
+    .city-option.active {
+      background: rgba(168, 85, 247, 0.25);
+    }
+    .city-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div>
+      <div class="progress-wrap" id="progressBar">
+        <div class="progress-step" id="p1"></div>
+        <div class="progress-step" id="p2"></div>
+        <div class="progress-step" id="p3"></div>
+        <div class="progress-step" id="p4"></div>
+      </div>
+
+      <!-- Экран 0 -->
+      <div class="screen active" id="screen-0">
+        <div class="wheel-wrap">
+          <div class="wheel-circle"></div>
+          <div class="wheel-inner">✨</div>
+        </div>
+        <h1>Получи бесплатный разбор твоей натальной карты</h1>
+        <p class="subtitle">Точный расчёт по эфемеридам Swiss Ephemeris</p>
+        <div class="card feature-list">
+          <div class="feature-item">
+            <span>🪐</span>
+            <span>ИИ составит твою личную натальную карту.</span>
+          </div>
+          <div class="feature-item">
+            <span>🔮</span>
+            <span>На основе вашей натальной карты проконсультирует вас по выбранному запросу.</span>
+          </div>
+          <div class="feature-item">
+            <span>🎁</span>
+            <span>В конце поделись своими впечатлениями и получи подарок.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 1 -->
+      <div class="screen" id="screen-1">
+        <h1>Как к тебе обращаться?</h1>
+        <p class="subtitle">Имя и пол сохраняются в твой астрологический профиль</p>
+        <div class="card">
+          <label for="userName">Твоё имя</label>
+          <input type="text" id="userName" placeholder="Например, Алина" />
+          <label style="margin-top: 16px;">Пол</label>
+          <div class="chips">
+            <div class="chip selected" onclick="selectGender('Женский', this)">♀ Женский</div>
+            <div class="chip" onclick="selectGender('Мужской', this)">♂ Мужской</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 2 -->
+      <div class="screen" id="screen-2">
+        <h1>Дата рождения</h1>
+        <p class="subtitle">Для расчёта эклиптической долготы планет</p>
+        <div class="card">
+          <label for="birthDate">Выбери дату</label>
+          <input type="date" id="birthDate" onchange="updateZodiac()" />
+          <div class="zodiac-badge" id="zodiacBadge"></div>
+        </div>
+      </div>
+
+      <!-- Экран 3 -->
+      <div class="screen" id="screen-3">
+        <h1>Время рождения</h1>
+        <p class="subtitle">Необходимо для расчёта сетки 12 домов и Асцендента</p>
+        <div class="card">
+          <div id="exactTimeBlock">
+            <label for="birthTime">Точное время</label>
+            <input type="time" id="birthTime" value="12:00" />
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="unknownTimeCheck" onchange="toggleUnknownTime()" />
+            <span>Я не знаю точного времени</span>
+          </label>
+          <div id="approxTimeBlock" style="display: none; margin-top: 14px;">
+            <label>Примерное время суток:</label>
+            <div class="chips">
+              <div class="chip selected" onclick="selectApprox('Утро', this)">🌅 Утро</div>
+              <div class="chip" onclick="selectApprox('День', this)">☀️ День</div>
+              <div class="chip" onclick="selectApprox('Вечер', this)">🌆 Вечер</div>
+              <div class="chip" onclick="selectApprox('Ночь', this)">🌙 Ночь</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 4 -->
+      <div class="screen" id="screen-4">
+        <h1>Место рождения</h1>
+        <p class="subtitle">Координаты города и часовой пояс</p>
+        <div class="card">
+          <label for="birthCity">Город</label>
+          <div class="city-wrap">
+            <input type="text" id="birthCity" placeholder="Начни печатать: например, Балаково…" autocomplete="off" />
+            <div class="city-dropdown" id="cityDropdown"></div>
+          </div>
+          <div class="city-hint">Выпадет список всех городов мира — выбери нужный, чтобы точно определить координаты и часовой пояс.</div>
+          <label style="margin-top: 14px;">Быстрый выбор:</label>
+          <div class="chips">
+            <div class="chip" onclick="setCity('Москва', 55.7558, 37.6173, 'Europe/Moscow')">Москва</div>
+            <div class="chip" onclick="setCity('Санкт-Петербург', 59.9343, 30.3351, 'Europe/Moscow')">Санкт-Петербург</div>
+            <div class="chip" onclick="setCity('Екатеринбург', 56.8389, 60.6057, 'Asia/Yekaterinburg')">Екатеринбург</div>
+            <div class="chip" onclick="setCity('Новосибирск', 55.0084, 82.9357, 'Asia/Novosibirsk')">Новосибирск</div>
+            <div class="chip" onclick="setCity('Казань', 55.7887, 49.1221, 'Europe/Moscow')">Казань</div>
+            <div class="chip" onclick="setCity('Краснодар', 45.0355, 38.9753, 'Europe/Moscow')">Краснодар</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 5 -->
+      <div class="screen" id="screen-5">
+        <h1>Твоя натальная карта ✨</h1>
+        <p class="subtitle" id="resultSubtitle">Рассчитано через Swiss Ephemeris</p>
+        <div class="card">
+          <div class="chart-container">
+            <div id="paper"></div>
+          </div>
+          <div class="ai-interpretation" id="aiText">
+            Загрузка данных из Swiss Ephemeris...
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 6: выбор темы и свой запрос -->
+      <div class="screen" id="screen-6">
+        <h1>О чём спросить астролога?</h1>
+        <p class="subtitle">Выбери тему — и напиши свой вопрос своими словами</p>
+        <div class="card">
+          <label>Тема</label>
+          <div class="chips">
+            <div class="chip" onclick="selectTopic('Любовь и отношения', this)">💘 Любовь</div>
+            <div class="chip" onclick="selectTopic('Деньги и карьера', this)">💼 Карьера</div>
+            <div class="chip" onclick="selectTopic('Самопознание', this)">🧠 Я и предназначение</div>
+            <div class="chip" onclick="selectTopic('Энергия и состояние', this)">⚡ Состояние</div>
+            <div class="chip" onclick="selectTopic('Сейчас в жизни', this)">🌙 Что сейчас</div>
+            <div class="chip" onclick="selectTopic('Другое', this)">💬 Другое</div>
+          </div>
+          <label style="margin-top: 16px;" for="questionInput">Твой запрос</label>
+          <textarea id="questionInput" maxlength="500" placeholder="Например: какой партнёр мне подходит и на что мне обратить внимание в отношениях?"></textarea>
+          <div class="char-counter" id="charCounter"></div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <div class="nav-btns">
+      <button class="btn btn-secondary" id="backBtn" style="display: none;" onclick="prevStep()">Назад</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Начать расчёт ✨</button>
+    </div>
+  </div>
+
+  <script>
+    // Адрес локального API-сервера из bot.py
+    const API_URL = "http://127.0.0.1:8080/api/natal";
+
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+
+    let currentStep = 0;
+    const QUESTION_MAX = 500;
+    const state = {
+      telegram_id: tgUser.id || 100001,
+      username: tgUser.username || "",
+      name: tgUser.first_name || "",
+      gender: "Женский",
+      birthDate: "",
+      zodiacSign: "",
+      birthTime: "12:00",
+      unknownTime: false,
+      approxPeriod: "Утро",
+      city: "",
+      latitude: 55.7558,
+      longitude: 37.6173,
+      timezone: "Europe/Moscow",
+      tzOffset: 3.0,
+      tzConfirmed: false,
+      topic: "",
+      question: ""
+    };
+
+    if (state.name) {
+      document.getElementById("userName").value = state.name;
+    }
+
+    function selectGender(gender, el) {
+      state.gender = gender;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function toggleUnknownTime() {
+      const checked = document.getElementById("unknownTimeCheck").checked;
+      state.unknownTime = checked;
+      document.getElementById("exactTimeBlock").style.display = checked ? "none" : "block";
+      document.getElementById("approxTimeBlock").style.display = checked ? "block" : "none";
+    }
+
+    function selectApprox(period, el) {
+      state.approxPeriod = period;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function selectTopic(topic, el) {
+      state.topic = topic;
+      el.parentElement.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+      el.classList.add("selected");
+      document.getElementById("errorMsg").textContent = "";
+    }
+
+    function updateCounter() {
+      const input = document.getElementById("questionInput");
+      const counter = document.getElementById("charCounter");
+      const used = input.value.length;
+      const remaining = QUESTION_MAX - used;
+      counter.classList.toggle("limit", remaining <= 50);
+      if (remaining === 0) {
+        counter.textContent = "Символы закончились. Если тема сложнее — попроси бота в чате продолжить или задай второй вопрос позже.";
+      } else if (remaining <= 50) {
+        counter.textContent = `Осталось ${remaining} симв. — этого хватит на 1-2 предложения.`;
+      } else {
+        counter.textContent = `Осталось ${remaining} симв. — этого хватит на развёрнутый вопрос (4-6 предложений).`;
+      }
+    }
+
+    function setCity(city, lat, lon, tz) {
+      document.getElementById("birthCity").value = city;
+      state.city = city;
+      state.latitude = lat;
+      state.longitude = lon;
+      state.timezone = tz;
+      state.tzConfirmed = true;
+      document.getElementById("errorMsg").textContent = "";
+      hideCityDropdown();
+    }
+
+    // ----- Поиск города (Nominatim / OSM): любые населённые пункты мира -----
+
+    const cityInput = document.getElementById("birthCity");
+    const cityDropdown = document.getElementById("cityDropdown");
+    let citySearchTimer = null;
+    let citySearchAbort = null;
+    let cityOptions = [];
+
+    function hideCityDropdown() {
+      cityDropdown.classList.remove("visible");
+    }
+
+    function renderCityOptions() {
+      cityDropdown.innerHTML = "";
+      cityOptions.forEach((opt, idx) => {
+        const el = document.createElement("div");
+        el.className = "city-option";
+        el.textContent = opt.label;
+        el.onclick = () => pickCity(opt);
+        cityDropdown.appendChild(el);
+      });
+      cityDropdown.classList.toggle("visible", cityOptions.length > 0);
+    }
+
+    function pickCity(opt) {
+      // Часовой пояс определяем по координатам офлайн ( библиотека tz-lookup)
+      const tz = (typeof tzlookup === "function") ? tzlookup(opt.lat, opt.lon) : "Europe/Moscow";
+      setCity(opt.label, opt.lat, opt.lon, tz);
+    }
+
+    async function searchCity(query) {
+      if (citySearchAbort) citySearchAbort.abort();
+      citySearchAbort = new AbortController();
+      const signal = citySearchAbort.signal;
+      const paramsFor = (extra) => "https://photon.komoot.io/api/?limit=8&q=" + encodeURIComponent(query) + (extra ? extra : "");
+      const toOptions = (features) => {
+        const seen = new Set();
+        const out = [];
+        (features || []).forEach((f) => {
+          const pr = f.properties;
+          const tail = [pr.state, (pr.country_code || "").toUpperCase()].filter(Boolean).join(", ");
+          const label = pr.name + (tail ? ", " + tail : "");
+          if (!pr.name || seen.has(label)) return;
+          seen.add(label);
+          out.push({ label, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] });
+        });
+        return out;
+      };
+      let results = [];
+      // 1. Города и посёлки — ранжируются как в классических подсказках
+      // 2. Если пусто — всё подряд (деревни, хутора)
+      // 3. Если пусто — Nominatim (OSM)
+      const photonFetches = [
+        paramsFor("&osm_tag=place:city&osm_tag=place:town"),
+        paramsFor()
+      ];
+      for (const url of photonFetches) {
+        try {
+          const p = await fetch(url, { signal });
+          const pj = await p.json();
+          results = toOptions(pj.features);
+        } catch (err) {
+          if (err.name === "AbortError") return;
+        }
+        if (results.length) break;
+      }
+      if (!results.length) {
+        try {
+          const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&accept-language=ru&limit=8&addressdetails=0&q=" + encodeURIComponent(query);
+          const n = await fetch(url, { signal, headers: { "Accept-Language": "ru" } });
+          const N = await n.json();
+          results = N.map((osm) => ({ label: osm.display_name || osm.name || "", lat: parseFloat(osm.lat), lon: parseFloat(osm.lon) }));
+        } catch (err) {
+          if (err.name === "AbortError") return;
+        }
+      }
+      cityOptions = results;
+      renderCityOptions();
+    }
+
+    cityInput.addEventListener("input", () => {
+      state.tzConfirmed = false; // текст меняется — предыдущий выбор не считается
+      const q = cityInput.value.trim();
+      clearTimeout(citySearchTimer);
+      if (q.length < 2) {
+        cityOptions = [];
+        hideCityDropdown();
+        return;
+      }
+      // Дебаунс 600мс + правило Nominatim "не чаще 1 запроса в секунду"
+      citySearchTimer = setTimeout(() => searchCity(q), 600);
+    });
+
+    // Часовой пояс по координатам (офлайн, исторические зоны через Intl)
+    function tzOffsetMinutes(tzName, date) {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: tzName,
+        hour12: false,
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      }).formatToParts(date);
+      const get = (t) => Number(parts.find((p) => p.type === t).value);
+      const asUTC = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour") % 24, get("minute"), get("second"));
+      return Math.round((asUTC - date.getTime()) / 60000);
+    }
+
+    // Смещение UTC для конкретного момента рождения (учитывает декретное и летнее время прошлого)
+    function tzOffsetHours(tzName, birthDate, birthTime) {
+      const [y, m, d] = birthDate.split("-").map(Number);
+      const [hh, mm] = (birthTime || "12:00").split(":").map(Number);
+      const guessUTC = Date.UTC(y, m - 1, d, hh || 0, mm || 0);
+      let off = tzOffsetMinutes(tzName, new Date(guessUTC));
+      off = tzOffsetMinutes(tzName, new Date(guessUTC - off * 60000));
+      return Math.round((off / 60) * 100) / 100;
+    }
+
+    function getZodiac(day, month) {
+      const signs = [
+        { name: "♑ Козерог", m: 1, d: 19 }, { name: "♒ Водолей", m: 2, d: 18 },
+        { name: "♓ Рыбы", m: 3, d: 20 }, { name: "♈ Овен", m: 4, d: 19 },
+        { name: "♉ Телец", m: 5, d: 20 }, { name: "♊ Близнецы", m: 6, d: 20 },
+        { name: "♋ Рак", m: 7, d: 22 }, { name: "♌ Лев", m: 8, d: 22 },
+        { name: "♍ Дева", m: 9, d: 22 }, { name: "♎ Весы", m: 10, d: 22 },
+        { name: "♏ Скорпион", m: 11, d: 21 }, { name: "♐ Стрелец", m: 12, d: 21 },
+        { name: "♑ Козерог", m: 12, d: 31 }
+      ];
+      for (const s of signs) {
+        if (month === s.m && day <= s.d) return s.name;
+        if (month < s.m) return s.name;
+      }
+      return "♑ Козерог";
+    }
+
+    function updateZodiac() {
+      const val = document.getElementById("birthDate").value;
+      const badge = document.getElementById("zodiacBadge");
+      if (!val) { badge.style.display = "none"; return; }
+      const [, m, d] = val.split("-").map(Number);
+      state.zodiacSign = getZodiac(d, m);
+      badge.textContent = `Солнечный знак: ${state.zodiacSign}`;
+      badge.style.display = "block";
+    }
+
+    function validateStep() {
+      const err = document.getElementById("errorMsg");
+      err.textContent = "";
+
+      if (currentStep === 1) {
+        const name = document.getElementById("userName").value.trim();
+        if (!name) { err.textContent = "Укажи своё имя"; return false; }
+        state.name = name;
+      } else if (currentStep === 2) {
+        const dateVal = document.getElementById("birthDate").value;
+        if (!dateVal) { err.textContent = "Укажи дату рождения"; return false; }
+        state.birthDate = dateVal;
+      } else if (currentStep === 3) {
+        state.birthTime = state.unknownTime ? state.approxPeriod : (document.getElementById("birthTime").value || "12:00");
+      } else if (currentStep === 4) {
+        const city = document.getElementById("birthCity").value.trim();
+        if (!city) { err.textContent = "Укажи город рождения"; return false; }
+        if (!state.tzConfirmed) { err.textContent = "Выбери город из списка — так я точно определю координаты и часовой пояс"; return false; }
+        state.city = city;
+      } else if (currentStep === 6) {
+        const input = document.getElementById("questionInput");
+        state.question = input.value.trim();
+        if (!state.topic) { err.textContent = "Выбери тему"; return false; }
+        if (!state.question) { err.textContent = "Напиши свой запрос"; return false; }
+        if (state.question.length < 10) { err.textContent = "Слишком коротко — опиши вопрос чуть подробнее (хотя бы 10 символов)"; return false; }
+      }
+      return true;
+    }
+
+    function renderStep() {
+      document.querySelectorAll(".screen").forEach((s, idx) => {
+        s.classList.toggle("active", idx === currentStep);
+      });
+
+      const progressBar = document.getElementById("progressBar");
+      progressBar.classList.toggle("visible", currentStep > 0 && currentStep < 5);
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`p${i}`).classList.toggle("active", i <= currentStep);
+      }
+
+      document.getElementById("backBtn").style.display = (currentStep > 0 && currentStep < 5) ? "block" : "none";
+      const nextBtn = document.getElementById("nextBtn");
+
+      if (currentStep === 0) nextBtn.textContent = "Начать расчёт ✨";
+      else if (currentStep === 4) nextBtn.textContent = "Построить карту 🔮";
+      else if (currentStep === 5) nextBtn.textContent = "Выбрать тему 💬";
+      else if (currentStep === 6) {
+        nextBtn.textContent = "Готово — к консультации 💬";
+        if (!document.getElementById("charCounter").textContent) updateCounter();
+      }
+      else nextBtn.textContent = "Далее →";
+    }
+
+    // Минималистичные настройки отрисовки карты (astrochart v3):
+    // - COLORS_SIGNS прозрачные: убирает разноцветные дуги по кругу
+    // - SHOW_DIGNITIES_TEXT: выключает буквы достоинств (r/d/e/f)
+    // - CUSTOM_SYMBOL_FN: цифры куспидов 1-12 рисуются пустым <g> — иначе
+    //   библиотека ставит fallback-красный кружок вместо ненайденного символа
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    // Полный набор аспектов: гармоничные (секстиль/трин) — зелёные,
+    // напряжённые (квадрат/оппозиция) — красные, соединения — серые
+    const ASPECTS = {
+      conjunction: { degree: 0,   orbit: 10, color: "#555555" },
+      sextile:     { degree: 60,  orbit: 6,  color: "#27AE60" },
+      square:      { degree: 90,  orbit: 8,  color: "#FF4500" },
+      trine:       { degree: 120, orbit: 8,  color: "#27AE60" },
+      opposition:  { degree: 180, orbit: 10, color: "#FF4500" }
+    };
+    const CHART_SETTINGS = {
+      SYMBOL_SCALE: 0.85, // мельче глифы планет и знаков
+      COLORS_SIGNS: Array(12).fill("transparent"),
+      SHOW_DIGNITIES_TEXT: false,
+      CUSTOM_SYMBOL_FN: function (name) {
+        if (/^\d+$/.test(name)) return document.createElementNS(SVG_NS, "g");
+        return null; // глифы планет и знаков — стандартные
+      }
+    };
+
+    function drawChartWheel(renderData) {
+      document.getElementById("paper").innerHTML = "";
+      const chart = new astrochart.Chart("paper", 290, 290, CHART_SETTINGS);
+      const radix = chart.radix(renderData);
+      // Считаем аспекты сами через AspectCalculator: из коробки radix.aspects()
+      // игнорирует настройки ASPECTS и использует только встроенный дефолт
+      // (без секстилей, а соединение рисуется transparent — линией не виден)
+      const calc = new astrochart.AspectCalculator(renderData.planets, { ASPECTS });
+      radix.aspects(calc.radix(renderData.planets));
+      // Прячем мелкие подписи: цифры градусов у планет и значки аспектов на линиях
+      ["paper-astrology-radix-planets", "paper-astrology-aspects"].forEach((id) => {
+        const group = document.getElementById(id);
+        if (group) group.querySelectorAll("text").forEach((t) => t.remove());
+      });
+    }
+
+    async function saveAndGenerateChart() {
+      document.getElementById("resultSubtitle").textContent = `${state.name}, г. ${state.city}`;
+      const aiTextEl = document.getElementById("aiText");
+      aiTextEl.innerHTML = "⏳ Считаем точные эфемериды через <b>pyswisseph</b> и сохраняем в базу...";
+
+      // Смещение часового пояса на момент рождения (исторические пояса и
+      // декретное/летнее время учитываются через Intl + IANA-зону)
+      const birthTimeForTz = state.unknownTime ? "12:00" : state.birthTime;
+      state.tzOffset = tzOffsetHours(state.timezone, state.birthDate, birthTimeForTz);
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state)
+        });
+        const result = await response.json();
+
+        if (result.status === "ok") {
+          const c = result.chart;
+          drawChartWheel(c.chart_render);
+
+          aiTextEl.innerHTML = `
+            <b>✅ Сохранено в БД (ID #${result.user_id})</b><br><br>
+            ☀️ <b>Солнце:</b> ${c.sun_sign}<br>
+            🌙 <b>Луна:</b> ${c.moon_sign}<br>
+            ⬆️ <b>Асцендент:</b> ${c.ascendant}<br>
+            ☿ <b>Меркурий:</b> ${c.planets_ai.Mercury.sign}<br>
+            ♀ <b>Венера:</b> ${c.planets_ai.Venus.sign}<br>
+            ♂ <b>Марс:</b> ${c.planets_ai.Mars.sign}
+          `;
+          return;
+        }
+      } catch (err) {
+        console.warn("Локальный сервер недоступен, используем демо-расчёт:", err);
+      }
+
+      // Резервная отрисовка, если открыто с телефона без туннеля к ПК
+      const seed = state.birthDate.split("-").reduce((a, v) => a + parseInt(v), 0);
+      const getDeg = (o) => (seed * 13 + o * 30) % 360;
+      drawChartWheel({
+        planets: {
+          Sun: [getDeg(1)], Moon: [getDeg(2)], Mercury: [getDeg(3)],
+          Venus: [getDeg(4)], Mars: [getDeg(5)], Jupiter: [getDeg(6)],
+          Saturn: [getDeg(7)], Uranus: [getDeg(8)], Neptune: [getDeg(9)], Pluto: [getDeg(10)]
+        },
+        cusps: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]
+      });
+      aiTextEl.innerHTML = `
+        <b>Астрологический портрет:</b> Солнце в знаке ${state.zodiacSign}.<br>
+        <span style="color:#f5c542;font-size:12px;">(Локальный сервер 127.0.0.1:8080 не найден — проверь, что bot.py запущен на этом устройстве).</span>
+      `;
+    }
+
+    function nextStep() {
+      if (!validateStep()) return;
+
+      if (currentStep < 4) {
+        currentStep++;
+        renderStep();
+      } else if (currentStep === 4) {
+        currentStep = 5;
+        renderStep();
+        saveAndGenerateChart();
+      } else if (currentStep === 5) {
+        currentStep = 6;
+        renderStep();
+      } else {
+        // Экран темы и запроса пройден — дальше консультация в чате бота
+        if (tg) tg.close();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0 && currentStep < 5) {
+        document.getElementById("errorMsg").textContent = "";
+        currentStep--;
+        renderStep();
+      }
+    }
+  </script>
+</body>
+</html>
