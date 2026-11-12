@@ -350,6 +350,156 @@
       font-size: 12px;
       color: var(--text-muted);
     }
+
+    /* Стартовый экран: выбор режима */
+    .mode-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .mode-card {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+    .mode-card:hover {
+      border-color: rgba(168, 85, 247, 0.6);
+    }
+    .mode-card:active {
+      transform: scale(0.985);
+    }
+    .mode-icon {
+      flex: 0 0 auto;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      background: rgba(168, 85, 247, 0.16);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+    .mode-title {
+      font-size: 15.5px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .mode-desc {
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    /* Результат синастрии */
+    .score-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 0 14px;
+    }
+    .score-circle {
+      width: 108px;
+      height: 108px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      position: relative;
+      background: conic-gradient(var(--accent) var(--score-deg, 60%), rgba(255, 255, 255, 0.1) 0);
+    }
+    .score-circle::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background: #150f28;
+    }
+    .score-circle span {
+      position: relative;
+      z-index: 1;
+    }
+    .score-label {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .aspect-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+    }
+    .aspect-item:last-child {
+      border-bottom: none;
+    }
+    .aspect-name {
+      line-height: 1.35;
+    }
+    .aspect-tag {
+      flex: 0 0 auto;
+      font-size: 11.5px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      height: fit-content;
+    }
+    .aspect-tag.harmony {
+      color: #4ade80;
+      background: rgba(74, 222, 128, 0.12);
+    }
+    .aspect-tag.tension {
+      color: #fb7185;
+      background: rgba(251, 113, 133, 0.12);
+    }
+
+    /* Прогноз на день */
+    .daily-moon {
+      text-align: center;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      padding-bottom: 10px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .daily-moon:empty {
+      display: none;
+    }
+    .daily-list-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      margin: 14px 0 6px;
+    }
+    .daily-list-title.do {
+      color: #4ade80;
+    }
+    .daily-list-title.avoid {
+      color: #fb7185;
+    }
+    .daily-list-item {
+      font-size: 13.5px;
+      line-height: 1.5;
+      padding: 4px 0 4px 14px;
+      position: relative;
+    }
+    .daily-list-item::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
@@ -362,26 +512,35 @@
         <div class="progress-step" id="p4"></div>
       </div>
 
-      <!-- Экран 0 -->
+      <!-- Экран 0: выбор режима -->
       <div class="screen active" id="screen-0">
         <div class="wheel-wrap">
           <div class="wheel-circle"></div>
           <div class="wheel-inner">✨</div>
         </div>
-        <h1>Получи бесплатный разбор твоей натальной карты</h1>
-        <p class="subtitle">Точный расчёт по эфемеридам Swiss Ephemeris</p>
-        <div class="card feature-list">
-          <div class="feature-item">
-            <span>🪐</span>
-            <span>ИИ составит твою личную натальную карту.</span>
+        <h1>Что тебя интересует?</h1>
+        <p class="subtitle">Выбери, с чего начнём</p>
+        <div class="mode-list">
+          <div class="mode-card" onclick="chooseMode('natal')">
+            <div class="mode-icon">🔮</div>
+            <div>
+              <div class="mode-title">Разбор натальной карты</div>
+              <div class="mode-desc">Точная карта по эфемеридам Swiss Ephemeris и ИИ-консультация по любому вопросу</div>
+            </div>
           </div>
-          <div class="feature-item">
-            <span>🔮</span>
-            <span>На основе вашей натальной карты проконсультирует вас по выбранному запросу.</span>
+          <div class="mode-card" onclick="chooseMode('synastry')">
+            <div class="mode-icon">💞</div>
+            <div>
+              <div class="mode-title">Синастрия</div>
+              <div class="mode-desc">Проверка совместимости: как сочетаются твоя карта и карта партнёра</div>
+            </div>
           </div>
-          <div class="feature-item">
-            <span>🎁</span>
-            <span>В конце поделись своими впечатлениями и получи подарок.</span>
+          <div class="mode-card" onclick="chooseMode('daily')">
+            <div class="mode-icon">🌤</div>
+            <div>
+              <div class="mode-title">Прогноз на день</div>
+              <div class="mode-desc">Сегодняшние транзиты: что за день и как его провести</div>
+            </div>
           </div>
         </div>
       </div>
@@ -494,10 +653,112 @@
         </div>
       </div>
 
+      <!-- Экран 7: ответ ИИ-астролога -->
+      <div class="screen" id="screen-7">
+        <h1>Консультация готова ✨</h1>
+        <p class="subtitle" id="consultSubtitle"></p>
+        <div class="card">
+          <div class="ai-interpretation" id="consultText"></div>
+        </div>
+      </div>
+
+      <!-- Экран 8: имя партнёра -->
+      <div class="screen" id="screen-8">
+        <h1>Данные партнёра</h1>
+        <p class="subtitle">С кем проверяем совместимость?</p>
+        <div class="card">
+          <label for="partnerName">Имя партнёра</label>
+          <input type="text" id="partnerName" placeholder="Например, Артём" />
+        </div>
+      </div>
+
+      <!-- Экран 9: дата рождения партнёра -->
+      <div class="screen" id="screen-9">
+        <h1>Дата рождения партнёра</h1>
+        <p class="subtitle">Нужна для расчёта его карты</p>
+        <div class="card">
+          <label for="partnerBirthDate">Выбери дату</label>
+          <input type="date" id="partnerBirthDate" onchange="updatePartnerZodiac()" />
+          <div class="zodiac-badge" id="partnerZodiacBadge"></div>
+        </div>
+      </div>
+
+      <!-- Экран 10: время рождения партнёра -->
+      <div class="screen" id="screen-10">
+        <h1>Время рождения партнёра</h1>
+        <p class="subtitle">Влияет на Луну и Асцендент — ключевые точки синастрии</p>
+        <div class="card">
+          <div id="partnerExactTimeBlock">
+            <label for="partnerBirthTime">Точное время</label>
+            <input type="time" id="partnerBirthTime" value="12:00" />
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="partnerUnknownTimeCheck" onchange="togglePartnerUnknownTime()" />
+            <span>Я не знаю точного времени партнёра</span>
+          </label>
+          <div id="partnerApproxTimeBlock" style="display: none; margin-top: 14px;">
+            <label>Примерное время суток:</label>
+            <div class="chips">
+              <div class="chip selected" onclick="selectPartnerApprox('Утро', this)">🌅 Утро</div>
+              <div class="chip" onclick="selectPartnerApprox('День', this)">☀️ День</div>
+              <div class="chip" onclick="selectPartnerApprox('Вечер', this)">🌆 Вечер</div>
+              <div class="chip" onclick="selectPartnerApprox('Ночь', this)">🌙 Ночь</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Экран 11: город рождения партнёра -->
+      <div class="screen" id="screen-11">
+        <h1>Город рождения партнёра</h1>
+        <p class="subtitle">Координаты и часовой пояс</p>
+        <div class="card">
+          <label for="partnerCity">Город</label>
+          <div class="city-wrap">
+            <input type="text" id="partnerCity" placeholder="Начни печатать город…" autocomplete="off" />
+            <div class="city-dropdown" id="partnerCityDropdown"></div>
+          </div>
+          <div class="city-hint">Выбери город из списка — так точно определится часовой пояс.</div>
+        </div>
+      </div>
+
+      <!-- Экран 12: результат синастрии -->
+      <div class="screen" id="screen-12">
+        <h1>Синастрия 💞</h1>
+        <p class="subtitle" id="synastrySubtitle">Считаем совместимость…</p>
+        <div class="card">
+          <div class="score-wrap">
+            <div class="score-circle" id="scoreCircle"><span id="scoreValue">—</span></div>
+            <div class="score-label" id="scoreLabel">Совместимость</div>
+          </div>
+          <div id="aspectList"></div>
+        </div>
+        <div class="card">
+          <div class="ai-interpretation" id="synastryText">Астролог изучает ваши карты…</div>
+        </div>
+      </div>
+
+      <!-- Экран 13: прогноз на день -->
+      <div class="screen" id="screen-13">
+        <h1>Прогноз на день 🌤</h1>
+        <p class="subtitle" id="dailySubtitle">Считаем транзиты…</p>
+        <div class="card">
+          <div class="score-wrap">
+            <div class="score-circle" id="dailyCircle"><span id="dailyScore">—</span></div>
+            <div class="score-label" id="dailyLabel">Тон дня</div>
+          </div>
+          <div id="dailyMoon" class="daily-moon"></div>
+          <div id="dailyTransits"></div>
+        </div>
+        <div class="card">
+          <div class="ai-interpretation" id="dailyText">Астролог смотрит на небо…</div>
+        </div>
+      </div>
+
       <div class="error-msg" id="errorMsg"></div>
     </div>
 
-    <div class="nav-btns">
+    <div class="nav-btns" id="navBtns">
       <button class="btn btn-secondary" id="backBtn" style="display: none;" onclick="prevStep()">Назад</button>
       <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Начать расчёт ✨</button>
     </div>
@@ -506,6 +767,9 @@
   <script>
     // Адрес локального API-сервера из bot.py
     const API_URL = "http://127.0.0.1:8080/api/natal";
+    const CONSULT_URL = "http://127.0.0.1:8080/api/consult";
+    const SYNASTRY_URL = "http://127.0.0.1:8080/api/synastry";
+    const DAILY_URL = "http://127.0.0.1:8080/api/daily";
 
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
@@ -515,7 +779,6 @@
 
     const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
 
-    let currentStep = 0;
     const QUESTION_MAX = 500;
     const state = {
       telegram_id: tgUser.id || 100001,
@@ -540,6 +803,21 @@
     if (state.name) {
       document.getElementById("userName").value = state.name;
     }
+
+    // Данные партнёра для синастрии
+    const partner = {
+      name: "",
+      birthDate: "",
+      birthTime: "12:00",
+      unknownTime: false,
+      approxPeriod: "Утро",
+      city: "",
+      latitude: 55.7558,
+      longitude: 37.6173,
+      timezone: "Europe/Moscow",
+      tzOffset: 3.0,
+      tzConfirmed: false
+    };
 
     function selectGender(gender, el) {
       state.gender = gender;
@@ -590,100 +868,129 @@
       state.timezone = tz;
       state.tzConfirmed = true;
       document.getElementById("errorMsg").textContent = "";
-      hideCityDropdown();
+      ownCitySearch.hide();
     }
 
-    // ----- Поиск города (Nominatim / OSM): любые населённые пункты мира -----
-
-    const cityInput = document.getElementById("birthCity");
-    const cityDropdown = document.getElementById("cityDropdown");
-    let citySearchTimer = null;
-    let citySearchAbort = null;
-    let cityOptions = [];
-
-    function hideCityDropdown() {
-      cityDropdown.classList.remove("visible");
+    function setPartnerCity(city, lat, lon, tz) {
+      document.getElementById("partnerCity").value = city;
+      partner.city = city;
+      partner.latitude = lat;
+      partner.longitude = lon;
+      partner.timezone = tz;
+      partner.tzConfirmed = true;
+      document.getElementById("errorMsg").textContent = "";
+      partnerCitySearch.hide();
     }
 
-    function renderCityOptions() {
-      cityDropdown.innerHTML = "";
-      cityOptions.forEach((opt, idx) => {
-        const el = document.createElement("div");
-        el.className = "city-option";
-        el.textContent = opt.label;
-        el.onclick = () => pickCity(opt);
-        cityDropdown.appendChild(el);
-      });
-      cityDropdown.classList.toggle("visible", cityOptions.length > 0);
-    }
+    // ----- Поиск города (Photon / Nominatim, OSM): любые населённые пункты мира -----
+    // Фабрика: один и тот же автопоиск обслуживает свой город и город партнёра
 
-    function pickCity(opt) {
-      // Часовой пояс определяем по координатам офлайн ( библиотека tz-lookup)
-      const tz = (typeof tzlookup === "function") ? tzlookup(opt.lat, opt.lon) : "Europe/Moscow";
-      setCity(opt.label, opt.lat, opt.lon, tz);
-    }
+    function createCitySearch(opts) {
+      const input = document.getElementById(opts.inputId);
+      const dropdown = document.getElementById(opts.dropdownId);
+      let timer = null;
+      let abort = null;
+      let options = [];
 
-    async function searchCity(query) {
-      if (citySearchAbort) citySearchAbort.abort();
-      citySearchAbort = new AbortController();
-      const signal = citySearchAbort.signal;
-      const paramsFor = (extra) => "https://photon.komoot.io/api/?limit=8&q=" + encodeURIComponent(query) + (extra ? extra : "");
-      const toOptions = (features) => {
-        const seen = new Set();
-        const out = [];
-        (features || []).forEach((f) => {
-          const pr = f.properties;
-          const tail = [pr.state, (pr.country_code || "").toUpperCase()].filter(Boolean).join(", ");
-          const label = pr.name + (tail ? ", " + tail : "");
-          if (!pr.name || seen.has(label)) return;
-          seen.add(label);
-          out.push({ label, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] });
+      function hide() {
+        dropdown.classList.remove("visible");
+      }
+
+      function render() {
+        dropdown.innerHTML = "";
+        options.forEach((opt) => {
+          const el = document.createElement("div");
+          el.className = "city-option";
+          el.textContent = opt.label;
+          el.onclick = () => {
+            // Часовой пояс определяем по координатам офлайн (библиотека tz-lookup)
+            const tz = (typeof tzlookup === "function") ? tzlookup(opt.lat, opt.lon) : "Europe/Moscow";
+            opts.onPick(opt.label, opt.lat, opt.lon, tz);
+            hide();
+          };
+          dropdown.appendChild(el);
         });
-        return out;
-      };
-      let results = [];
-      // 1. Города и посёлки — ранжируются как в классических подсказках
-      // 2. Если пусто — всё подряд (деревни, хутора)
-      // 3. Если пусто — Nominatim (OSM)
-      const photonFetches = [
-        paramsFor("&osm_tag=place:city&osm_tag=place:town"),
-        paramsFor()
-      ];
-      for (const url of photonFetches) {
-        try {
-          const p = await fetch(url, { signal });
-          const pj = await p.json();
-          results = toOptions(pj.features);
-        } catch (err) {
-          if (err.name === "AbortError") return;
-        }
-        if (results.length) break;
+        dropdown.classList.toggle("visible", options.length > 0);
       }
-      if (!results.length) {
-        try {
-          const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&accept-language=ru&limit=8&addressdetails=0&q=" + encodeURIComponent(query);
-          const n = await fetch(url, { signal, headers: { "Accept-Language": "ru" } });
-          const N = await n.json();
-          results = N.map((osm) => ({ label: osm.display_name || osm.name || "", lat: parseFloat(osm.lat), lon: parseFloat(osm.lon) }));
-        } catch (err) {
-          if (err.name === "AbortError") return;
+
+      async function search(query) {
+        if (abort) abort.abort();
+        abort = new AbortController();
+        const signal = abort.signal;
+        const paramsFor = (extra) => "https://photon.komoot.io/api/?limit=8&q=" + encodeURIComponent(query) + (extra ? extra : "");
+        const toOptions = (features) => {
+          const seen = new Set();
+          const out = [];
+          (features || []).forEach((f) => {
+            const pr = f.properties;
+            const tail = [pr.state, (pr.country_code || "").toUpperCase()].filter(Boolean).join(", ");
+            const label = pr.name + (tail ? ", " + tail : "");
+            if (!pr.name || seen.has(label)) return;
+            seen.add(label);
+            out.push({ label, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] });
+          });
+          return out;
+        };
+        let results = [];
+        // 1. Города и посёлки — ранжируются как в классических подсказках
+        // 2. Если пусто — всё подряд (деревни, хутора)
+        // 3. Если пусто — Nominatim (OSM)
+        const photonFetches = [
+          paramsFor("&osm_tag=place:city&osm_tag=place:town"),
+          paramsFor()
+        ];
+        for (const url of photonFetches) {
+          try {
+            const p = await fetch(url, { signal });
+            const pj = await p.json();
+            results = toOptions(pj.features);
+          } catch (err) {
+            if (err.name === "AbortError") return;
+          }
+          if (results.length) break;
         }
+        if (!results.length) {
+          try {
+            const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&accept-language=ru&limit=8&addressdetails=0&q=" + encodeURIComponent(query);
+            const n = await fetch(url, { signal, headers: { "Accept-Language": "ru" } });
+            const N = await n.json();
+            results = N.map((osm) => ({ label: osm.display_name || osm.name || "", lat: parseFloat(osm.lat), lon: parseFloat(osm.lon) }));
+          } catch (err) {
+            if (err.name === "AbortError") return;
+          }
+        }
+        options = results;
+        render();
       }
-      cityOptions = results;
-      renderCityOptions();
+
+      input.addEventListener("input", () => {
+        opts.onType(); // текст меняется — предыдущий выбор не считается
+        const q = input.value.trim();
+        clearTimeout(timer);
+        if (q.length < 2) {
+          options = [];
+          hide();
+          return;
+        }
+        // Дебаунс 600мс + правило Nominatim "не чаще 1 запроса в секунду"
+        timer = setTimeout(() => search(q), 600);
+      });
+
+      return { hide };
     }
 
-    cityInput.addEventListener("input", () => {
-      state.tzConfirmed = false; // текст меняется — предыдущий выбор не считается
-      const q = cityInput.value.trim();
-      clearTimeout(citySearchTimer);
-      if (q.length < 2) {
-        cityOptions = [];
-        hideCityDropdown();
-        return;
-      }
-      // Дебаунс 600мс + правило Nominatim "не чаще 1 запроса в секунду"
-      citySearchTimer = setTimeout(() => searchCity(q), 600);
+    const ownCitySearch = createCitySearch({
+      inputId: "birthCity",
+      dropdownId: "cityDropdown",
+      onPick: (city, lat, lon, tz) => setCity(city, lat, lon, tz),
+      onType: () => { state.tzConfirmed = false; }
+    });
+
+    const partnerCitySearch = createCitySearch({
+      inputId: "partnerCity",
+      dropdownId: "partnerCityDropdown",
+      onPick: (city, lat, lon, tz) => setPartnerCity(city, lat, lon, tz),
+      onType: () => { partner.tzConfirmed = false; }
     });
 
     // Часовой пояс по координатам (офлайн, исторические зоны через Intl)
@@ -736,57 +1043,156 @@
       badge.style.display = "block";
     }
 
-    function validateStep() {
+    // ----- Навигация: экраны описываются сценарием (flow) -----
+
+    const NATAL_FLOW = ["screen-1", "screen-2", "screen-3", "screen-4", "screen-5", "screen-6", "screen-7"];
+    const OWN_DATA_FLOW = ["screen-1", "screen-2", "screen-3", "screen-4"];
+    const PARTNER_FLOW = ["screen-8", "screen-9", "screen-10", "screen-11", "screen-12"];
+
+    // На каких экранах показывать прогресс-бар и какая это ступень (1..4)
+    const FORM_STEPS = {
+      "screen-1": 1, "screen-2": 2, "screen-3": 3, "screen-4": 4,
+      "screen-8": 1, "screen-9": 2, "screen-10": 3, "screen-11": 4
+    };
+
+    let mode = null;       // "natal" | "synastry"
+    let flow = [];         // последовательность экранов текущего сценария
+    let stepIdx = 0;
+    let ownDataSaved = false;
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach((s) => {
+        s.classList.toggle("active", s.id === id);
+      });
+    }
+
+    function nextButtonText(id, isLast) {
+      if (isLast) return "Закрыть ✨";
+      if (id === "screen-4") {
+        if (mode === "natal") return "Построить карту 🔮";
+        if (mode === "daily") return "Показать прогноз 🌤";
+        return "Дальше — данные партнёра 💞";
+      }
+      const map = {
+        "screen-1": "Далее →",
+        "screen-2": "Далее →",
+        "screen-3": "Далее →",
+        "screen-5": "Выбрать тему 💬",
+        "screen-6": "Готово — к консультации 💬",
+        "screen-8": "Далее →",
+        "screen-9": "Далее →",
+        "screen-10": "Далее →",
+        "screen-11": "Проверить совместимость 💞"
+      };
+      return map[id] || "Далее →";
+    }
+
+    function renderNav() {
+      const navBtns = document.getElementById("navBtns");
+      if (!flow.length) {
+        navBtns.style.display = "none";
+        document.getElementById("progressBar").classList.remove("visible");
+        return;
+      }
+      navBtns.style.display = "flex";
+
+      const id = flow[stepIdx];
+      const isLast = stepIdx === flow.length - 1;
+
+      // Прогресс-бар только на шагах-формах
+      const formStep = FORM_STEPS[id];
+      document.getElementById("progressBar").classList.toggle("visible", Boolean(formStep));
+      if (formStep) {
+        for (let i = 1; i <= 4; i++) {
+          document.getElementById(`p${i}`).classList.toggle("active", i <= formStep);
+        }
+      }
+
+      document.getElementById("backBtn").style.display = "block";
+      const nextBtn = document.getElementById("nextBtn");
+      nextBtn.disabled = false;
+      nextBtn.textContent = nextButtonText(id, isLast);
+
+      if (id === "screen-6" && !document.getElementById("charCounter").textContent) {
+        updateCounter();
+      }
+    }
+
+    function goTo(index) {
+      stepIdx = Math.max(0, Math.min(index, flow.length - 1));
+      const id = flow[stepIdx];
+      showScreen(id);
+      renderNav();
+      if (id === "screen-5") saveAndGenerateChart();
+      if (id === "screen-12") runSynastry();
+      if (id === "screen-13") runDaily();
+    }
+
+    async function chooseMode(selected) {
+      mode = selected;
+      document.getElementById("errorMsg").textContent = "";
+      ownDataSaved = false;
+
+      // Демо: человек выбирает только один сценарий, поэтому свою карту
+      // он ещё не строил — данные рождения запрашиваем всегда.
+      if (selected === "natal") {
+        flow = [...NATAL_FLOW];
+        goTo(0);
+        return;
+      }
+
+      if (selected === "daily") {
+        flow = [...OWN_DATA_FLOW, "screen-13"];
+        goTo(0);
+        return;
+      }
+
+      flow = [...OWN_DATA_FLOW, ...PARTNER_FLOW];
+      goTo(0);
+    }
+
+    function validateScreen(id) {
       const err = document.getElementById("errorMsg");
       err.textContent = "";
 
-      if (currentStep === 1) {
+      if (id === "screen-1") {
         const name = document.getElementById("userName").value.trim();
         if (!name) { err.textContent = "Укажи своё имя"; return false; }
         state.name = name;
-      } else if (currentStep === 2) {
+      } else if (id === "screen-2") {
         const dateVal = document.getElementById("birthDate").value;
         if (!dateVal) { err.textContent = "Укажи дату рождения"; return false; }
         state.birthDate = dateVal;
-      } else if (currentStep === 3) {
+      } else if (id === "screen-3") {
         state.birthTime = state.unknownTime ? state.approxPeriod : (document.getElementById("birthTime").value || "12:00");
-      } else if (currentStep === 4) {
+      } else if (id === "screen-4") {
         const city = document.getElementById("birthCity").value.trim();
         if (!city) { err.textContent = "Укажи город рождения"; return false; }
         if (!state.tzConfirmed) { err.textContent = "Выбери город из списка — так я точно определю координаты и часовой пояс"; return false; }
         state.city = city;
-      } else if (currentStep === 6) {
+      } else if (id === "screen-6") {
         const input = document.getElementById("questionInput");
         state.question = input.value.trim();
         if (!state.topic) { err.textContent = "Выбери тему"; return false; }
         if (!state.question) { err.textContent = "Напиши свой запрос"; return false; }
         if (state.question.length < 10) { err.textContent = "Слишком коротко — опиши вопрос чуть подробнее (хотя бы 10 символов)"; return false; }
+      } else if (id === "screen-8") {
+        const name = document.getElementById("partnerName").value.trim();
+        if (!name) { err.textContent = "Укажи имя партнёра"; return false; }
+        partner.name = name;
+      } else if (id === "screen-9") {
+        const dateVal = document.getElementById("partnerBirthDate").value;
+        if (!dateVal) { err.textContent = "Укажи дату рождения партнёра"; return false; }
+        partner.birthDate = dateVal;
+      } else if (id === "screen-10") {
+        partner.birthTime = partner.unknownTime ? partner.approxPeriod : (document.getElementById("partnerBirthTime").value || "12:00");
+      } else if (id === "screen-11") {
+        const city = document.getElementById("partnerCity").value.trim();
+        if (!city) { err.textContent = "Укажи город рождения партнёра"; return false; }
+        if (!partner.tzConfirmed) { err.textContent = "Выбери город из списка — так я точно определю координаты и часовой пояс"; return false; }
+        partner.city = city;
       }
       return true;
-    }
-
-    function renderStep() {
-      document.querySelectorAll(".screen").forEach((s, idx) => {
-        s.classList.toggle("active", idx === currentStep);
-      });
-
-      const progressBar = document.getElementById("progressBar");
-      progressBar.classList.toggle("visible", currentStep > 0 && currentStep < 5);
-      for (let i = 1; i <= 4; i++) {
-        document.getElementById(`p${i}`).classList.toggle("active", i <= currentStep);
-      }
-
-      document.getElementById("backBtn").style.display = (currentStep > 0 && currentStep < 5) ? "block" : "none";
-      const nextBtn = document.getElementById("nextBtn");
-
-      if (currentStep === 0) nextBtn.textContent = "Начать расчёт ✨";
-      else if (currentStep === 4) nextBtn.textContent = "Построить карту 🔮";
-      else if (currentStep === 5) nextBtn.textContent = "Выбрать тему 💬";
-      else if (currentStep === 6) {
-        nextBtn.textContent = "Готово — к консультации 💬";
-        if (!document.getElementById("charCounter").textContent) updateCounter();
-      }
-      else nextBtn.textContent = "Далее →";
     }
 
     // Минималистичные настройки отрисовки карты (astrochart v3):
@@ -884,32 +1290,334 @@
       `;
     }
 
-    function nextStep() {
-      if (!validateStep()) return;
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
 
-      if (currentStep < 4) {
-        currentStep++;
-        renderStep();
-      } else if (currentStep === 4) {
-        currentStep = 5;
-        renderStep();
-        saveAndGenerateChart();
-      } else if (currentStep === 5) {
-        currentStep = 6;
-        renderStep();
-      } else {
-        // Экран темы и запроса пройден — дальше консультация в чате бота
-        if (tg) tg.close();
+    async function requestConsultation() {
+      const nextBtn = document.getElementById("nextBtn");
+      const err = document.getElementById("errorMsg");
+      nextBtn.disabled = true;
+      nextBtn.textContent = "Астролог отвечает... ⏳";
+      try {
+        const response = await fetch(CONSULT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            telegram_id: state.telegram_id,
+            topic: state.topic,
+            question: state.question
+          })
+        });
+        const result = await response.json();
+        if (result.status === "ok") {
+          showConsultation(result.answer);
+          return;
+        }
+        err.textContent = result.message || "Не удалось получить консультацию";
+      } catch (e) {
+        err.textContent = "Локальный сервер 127.0.0.1:8080 недоступен — запусти бота (python main.py)";
       }
+      nextBtn.disabled = false;
+      nextBtn.textContent = "Готово — к консультации 💬";
+    }
+
+    function showConsultation(answer) {
+      document.getElementById("consultSubtitle").textContent =
+        `${state.name}, тема: ${state.topic}`;
+      // Экранируем HTML и превращаем абзацы в <br>
+      document.getElementById("consultText").innerHTML =
+        escapeHtml(answer).replace(/\n/g, "<br>");
+      stepIdx = flow.indexOf("screen-7");
+      showScreen("screen-7");
+      renderNav();
+    }
+
+    // Свою карту сохраняем, чтобы сервер мог использовать её в синастрии
+    async function saveOwnDataForSynastry() {
+      const err = document.getElementById("errorMsg");
+      const nextBtn = document.getElementById("nextBtn");
+      const birthTimeForTz = state.unknownTime ? "12:00" : state.birthTime;
+      state.tzOffset = tzOffsetHours(state.timezone, state.birthDate, birthTimeForTz);
+
+      nextBtn.disabled = true;
+      nextBtn.textContent = "Сохраняем твою карту… ⏳";
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state)
+        });
+        const result = await response.json();
+        if (result.status === "ok") {
+          ownDataSaved = true;
+          nextBtn.disabled = false;
+          return true;
+        }
+        err.textContent = result.message || "Не удалось сохранить карту";
+      } catch (e) {
+        err.textContent = "Локальный сервер 127.0.0.1:8080 недоступен — запусти бота (python main.py)";
+      }
+      nextBtn.disabled = false;
+      nextBtn.textContent = nextButtonText("screen-4", false);
+      return false;
+    }
+
+    async function nextStep() {
+      const id = flow[stepIdx];
+      if (!validateScreen(id)) return;
+
+      // Синастрия / прогноз: перед результатом нужно сохранить свою карту
+      if (id === "screen-4" && mode !== "natal" && !ownDataSaved) {
+        const ok = await saveOwnDataForSynastry();
+        if (!ok) return;
+        goTo(stepIdx + 1);
+        return;
+      }
+
+      if (id === "screen-6") {
+        requestConsultation();
+        return;
+      }
+
+      if (stepIdx === flow.length - 1) {
+        if (tg) tg.close();
+        return;
+      }
+      goTo(stepIdx + 1);
     }
 
     function prevStep() {
-      if (currentStep > 0 && currentStep < 5) {
-        document.getElementById("errorMsg").textContent = "";
-        currentStep--;
-        renderStep();
+      document.getElementById("errorMsg").textContent = "";
+      if (stepIdx === 0) {
+        // Возврат на стартовый экран выбора
+        flow = [];
+        showScreen("screen-0");
+        renderNav();
+        return;
       }
+      goTo(stepIdx - 1);
     }
+
+    // ----- Синастрия -----
+
+    function togglePartnerUnknownTime() {
+      const checked = document.getElementById("partnerUnknownTimeCheck").checked;
+      partner.unknownTime = checked;
+      document.getElementById("partnerExactTimeBlock").style.display = checked ? "none" : "block";
+      document.getElementById("partnerApproxTimeBlock").style.display = checked ? "block" : "none";
+    }
+
+    function selectPartnerApprox(period, el) {
+      partner.approxPeriod = period;
+      el.parentElement.querySelectorAll(".chip").forEach((c) => c.classList.remove("selected"));
+      el.classList.add("selected");
+    }
+
+    function updatePartnerZodiac() {
+      const val = document.getElementById("partnerBirthDate").value;
+      const badge = document.getElementById("partnerZodiacBadge");
+      if (!val) { badge.style.display = "none"; return; }
+      const [, m, d] = val.split("-").map(Number);
+      badge.textContent = `Солнечный знак: ${getZodiac(d, m)}`;
+      badge.style.display = "block";
+    }
+
+    function scorePhrase(score) {
+      if (score >= 75) return "Очень высокая совместимость";
+      if (score >= 60) return "Хорошая совместимость";
+      if (score >= 45) return "Средняя совместимость — есть над чем работать";
+      return "Разные энергии — важен диалог";
+    }
+
+    function renderSynastry(result) {
+      document.getElementById("synastrySubtitle").textContent =
+        `${result.own_name} и ${result.partner_name}`;
+
+      const score = Number(result.score) || 0;
+      document.getElementById("scoreValue").textContent = `${score}%`;
+      document.getElementById("scoreCircle").style.setProperty("--score-deg", `${score}%`);
+      document.getElementById("scoreLabel").textContent = scorePhrase(score);
+
+      const list = document.getElementById("aspectList");
+      list.innerHTML = "";
+      (result.aspects || []).slice(0, 6).forEach((a) => {
+        const row = document.createElement("div");
+        row.className = "aspect-item";
+        row.innerHTML =
+          `<div class="aspect-name">${escapeHtml(a.planet_a_ru)} — ${escapeHtml(a.planet_b_ru)}` +
+          `<br><span style="color:var(--text-muted);font-size:11.5px;">${escapeHtml(a.aspect)}, орб ${a.orb}°</span></div>` +
+          `<div class="aspect-tag ${a.harmony ? "harmony" : "tension"}">${a.harmony ? "гармония" : "напряжение"}</div>`;
+        list.appendChild(row);
+      });
+
+      document.getElementById("synastryText").innerHTML =
+        escapeHtml(result.answer).replace(/\n/g, "<br>");
+    }
+
+    async function runSynastry() {
+      const err = document.getElementById("errorMsg");
+      const nextBtn = document.getElementById("nextBtn");
+
+      document.getElementById("synastrySubtitle").textContent = `${state.name} и ${partner.name}`;
+      document.getElementById("scoreValue").textContent = "—";
+      document.getElementById("aspectList").innerHTML = "";
+      document.getElementById("synastryText").innerHTML = "⏳ Считаем аспекты между картами…";
+
+      const birthTimeForTz = partner.unknownTime ? "12:00" : partner.birthTime;
+      partner.tzOffset = tzOffsetHours(partner.timezone, partner.birthDate, birthTimeForTz);
+
+      nextBtn.disabled = true;
+      nextBtn.textContent = "Астролог изучает ваши карты… ⏳";
+      try {
+        const response = await fetch(SYNASTRY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram_id: state.telegram_id, partner })
+        });
+        const result = await response.json();
+        if (result.status === "ok") {
+          renderSynastry(result);
+          nextBtn.disabled = false;
+          renderNav();
+          return;
+        }
+        err.textContent = result.message || "Не удалось рассчитать совместимость";
+      } catch (e) {
+        err.textContent = "Локальный сервер 127.0.0.1:8080 недоступен — запусти бота (python main.py)";
+      }
+      nextBtn.disabled = false;
+      nextBtn.textContent = "Проверить совместимость 💞";
+    }
+
+    // ----- Прогноз на день -----
+
+    function dailyPhrase(score) {
+      if (score >= 70) return "Светлый, ресурсный день";
+      if (score >= 55) return "Спокойный, ровный день";
+      if (score >= 40) return "День с переменным фоном";
+      return "День тише и бережнее";
+    }
+
+    // Разбирает ответ ИИ на 3 части: комментарий / что делать / чего избегать
+    function splitDailyAnswer(text) {
+      const doRe = /Что стоит сделать сегодня:?/i;
+      const avoidRe = /Чего лучше избегать:?/i;
+
+      let comment = text;
+      let doPart = "";
+      let avoidPart = "";
+
+      const parts = text.split(doRe);
+      comment = parts[0];
+      let rest = parts[1] || "";
+
+      const parts2 = rest.split(avoidRe);
+      doPart = parts2[0] || "";
+      avoidPart = parts2[1] || "";
+
+      return { comment, doPart, avoidPart };
+    }
+
+    function renderDailyList(title, cls, block) {
+      if (!block || !block.trim()) return null;
+      const wrap = document.createElement("div");
+      const h = document.createElement("div");
+      h.className = "daily-list-title " + cls;
+      h.textContent = title;
+      wrap.appendChild(h);
+
+      block
+        .split(/\n+/)
+        .map((s) => s.replace(/^[\s—\-•*]+/, "").trim())
+        .filter(Boolean)
+        .forEach((line) => {
+          const item = document.createElement("div");
+          item.className = "daily-list-item";
+          item.textContent = line;
+          wrap.appendChild(item);
+        });
+
+      return wrap;
+    }
+
+    function renderDaily(result) {
+      document.getElementById("dailySubtitle").textContent =
+        `${result.name} · ${result.date}`;
+
+      const score = Number(result.score) || 0;
+      document.getElementById("dailyScore").textContent = `${score}`;
+      document.getElementById("dailyCircle").style.setProperty("--score-deg", `${score}%`);
+      document.getElementById("dailyLabel").textContent = dailyPhrase(score);
+
+      const moonEl = document.getElementById("dailyMoon");
+      moonEl.innerHTML = result.moon_house
+        ? `🌙 Транзитная Луна в ${escapeHtml(result.moon_sign)}<br>идёт по ${result.moon_house}-му дому — ${escapeHtml(result.moon_house_theme || "")}`
+        : `🌙 Транзитная Луна в ${escapeHtml(result.moon_sign)}`;
+
+      const list = document.getElementById("dailyTransits");
+      list.innerHTML = "";
+      (result.transits || []).slice(0, 5).forEach((t) => {
+        const row = document.createElement("div");
+        row.className = "aspect-item";
+        row.innerHTML =
+          `<div class="aspect-name">${escapeHtml(t.planet_ru)} — ${escapeHtml(t.natal_planet_ru)}` +
+          `<br><span style="color:var(--text-muted);font-size:11.5px;">${escapeHtml(t.aspect)}, орб ${t.orb}°</span></div>` +
+          `<div class="aspect-tag ${t.harmony ? "harmony" : "tension"}">${t.harmony ? "поддержка" : "напряжение"}</div>`;
+        list.appendChild(row);
+      });
+
+      const box = document.getElementById("dailyText");
+      box.innerHTML = "";
+
+      const parts = splitDailyAnswer(result.answer || "");
+      const comment = document.createElement("div");
+      comment.innerHTML = escapeHtml(parts.comment.trim()).replace(/\n/g, "<br>");
+      box.appendChild(comment);
+
+      const doBlock = renderDailyList("Что стоит сделать сегодня", "do", parts.doPart);
+      if (doBlock) box.appendChild(doBlock);
+
+      const avoidBlock = renderDailyList("Чего лучше избегать", "avoid", parts.avoidPart);
+      if (avoidBlock) box.appendChild(avoidBlock);
+    }
+
+    async function runDaily() {
+      const err = document.getElementById("errorMsg");
+      const nextBtn = document.getElementById("nextBtn");
+
+      document.getElementById("dailySubtitle").textContent = "Считаем транзиты…";
+      document.getElementById("dailyScore").textContent = "—";
+      document.getElementById("dailyTransits").innerHTML = "";
+      document.getElementById("dailyMoon").innerHTML = "";
+      document.getElementById("dailyText").innerHTML = "⏳ Сверяем небо сегодня с твоей картой…";
+
+      nextBtn.disabled = true;
+      nextBtn.textContent = "Смотрим транзиты… ⏳";
+      try {
+        const response = await fetch(DAILY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram_id: state.telegram_id })
+        });
+        const result = await response.json();
+        if (result.status === "ok") {
+          renderDaily(result);
+          nextBtn.disabled = false;
+          renderNav();
+          return;
+        }
+        err.textContent = result.message || "Не удалось получить прогноз";
+      } catch (e) {
+        err.textContent = "Локальный сервер 127.0.0.1:8080 недоступен — запусти бота (python main.py)";
+      }
+      nextBtn.disabled = false;
+      nextBtn.textContent = "Закрыть ✨";
+    }
+
+    // Стартовый экран: навигация скрыта, пока не выбран сценарий
+    renderNav();
   </script>
 </body>
 </html>

@@ -1,4 +1,20 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": [".opencode/*.md"]
+  "instructions": [".opencode/*.md"],
+  "model": "plusvibe/deepseek-v4.1-flash-1017",
+  "provider": {
+    "plusvibe": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "PlusVibe",
+      "options": {
+        "baseURL": "https://gw.plusvibeapi.ru/v1",
+        "apiKey": "sk-pv-191b49f50ffcba11f366bb7efc9976e2"
+      },
+      "models": {
+        "deepseek-v4.1-flash-1017": {
+          "name": "DeepSeek V4.1 Flash"
+        }
+      }
+    }
+  }
 }
